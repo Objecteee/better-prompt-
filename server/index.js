@@ -14,40 +14,9 @@ if (!API_KEY) {
   console.warn('[WARN] Missing AI302_API_KEY. Set it in server/.env');
 }
 
-app.post('/api/optimize', async (req, res) => {
-  try {
-    const { messages, model = 'gpt-3.5-turbo-0125', llmParams = {} } = req.body || {};
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json({ error: 'messages is required' });
-    }
-
-    const rsp = await fetch(`${BASE_URL}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${API_KEY}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        ...llmParams
-      })
-    });
-
-    const data = await rsp.json();
-    if (!rsp.ok) {
-      return res.status(rsp.status).json({ error: data });
-    }
-
-    const choice = data?.choices?.[0];
-    const content = choice?.message?.content || '';
-    const reasoning = choice?.message?.reasoning_content || '';
-    res.json({ content, reasoning, raw: data });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: String(e) });
-  }
+app.post('/api/optimize', async (_req, res) => {
+  // 保留路由和配置，但禁用真实外部调用
+  return res.status(501).json({ error: 'LLM proxy disabled' });
 });
 
 const port = Number(process.env.PORT || 3001);
