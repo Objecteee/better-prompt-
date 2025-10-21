@@ -79,21 +79,21 @@ export class Module1Parser {
 1. 提取核心主体（用户想画什么）
 2. 提取核心需求（用户明确提到的风格/感觉，未明确则写"未指定风格"）
 3. 自动修正错别字和模糊表述
-4. 识别隐含需求（基于主体进行合理推断）
+4. 识别隐含需求（仅基于用户上下文进行推断）
 5. 生成补全询问（如果信息不足）
 
 重要规则：
 - 只有用户明确提到的风格才写入coreIntent，不要自行推断
 - 如果用户只说"画美女"，coreIntent应该是"未指定风格"
 - 补全询问要针对缺失的关键信息，不要重复已识别的信息
-- 隐含需求要基于主体进行合理推断，不要都写"未提及"
+- 隐含需求仅基于用户上下文进行推断，没有上下文则写"未指定"
 
 输出格式要求：
 - 必须返回JSON格式
 - 字段：coreSubject, coreIntent, corrections, clarificationQuestions, implicitNeeds, confidence
 - corrections是字符串数组，记录修正内容
 - clarificationQuestions是字符串数组，最多3个问题
-- implicitNeeds包含mood, colorPalette, composition，基于主体合理推断
+- implicitNeeds包含mood, colorPalette, composition，仅基于用户上下文推断
 - confidence是0-1之间的数字
 
 示例输出：
@@ -103,7 +103,7 @@ export class Module1Parser {
   "corrections": ["赛博朋客 → 赛博朋克"],
   "clarificationQuestions": ["您希望什么风格？（如：写实、卡通、水彩等）", "您希望什么场景环境？"],
   "implicitNeeds": {
-    "mood": "自然",
+    "mood": "未指定",
     "colorPalette": "未指定",
     "composition": "未指定"
   },
@@ -126,12 +126,11 @@ export class Module1Parser {
 
     // 添加隐含需求推断指导
     prompt += `\n\n隐含需求推断指导：
-- 对于人物主体（美女、女孩、男孩等），可以推断mood为"自然"或"优雅"
-- 对于动物主体（猫、狗等），可以推断mood为"可爱"或"活泼"
-- 对于风景主体，可以推断mood为"宁静"或"壮丽"
-- 如果输入包含季节词汇（春、夏、秋、冬），可以推断相应的colorPalette
-- 如果输入包含视角词汇（特写、全景、俯视等），可以推断composition
-- 如果无法推断，则写"未指定"而不是"未提及"`;
+- 不要基于主体类型进行默认推导
+- 仅根据用户上下文信息（preference）进行推断
+- 如果用户上下文中有偏好信息，可以基于此推断implicitNeeds
+- 如果没有用户上下文信息，则所有implicitNeeds字段都写"未指定"
+- 不要进行任何主观推测或默认假设`;
 
     return prompt;
   }
