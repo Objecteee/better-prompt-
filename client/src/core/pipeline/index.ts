@@ -1,4 +1,4 @@
-// 模块1和模块2的导出入口
+// 模块1、模块2和模块3的导出入口
 
 // 模块1
 export { Module1Parser, parseUserInput } from './modules/module1';
@@ -11,3 +11,7 @@ export { Module2Completer, completeUserInput } from './modules/module2';
 export type { M2Input, M2Output, M2Config } from './types/module2';
 export { validateM2Output, validateM2Input, validateM2Config } from './validators/module2';
 export { testCases as m2TestCases, runModule2Tests, runPerformanceTest as runM2PerformanceTest, runErrorHandlingTest as runM2ErrorHandlingTest } from './examples/module2';
+
+// 模块3
+export { Module3Optimizer, optimizeExpression } from './modules/module3';
+export type { M3Input, M3Output, M3Config } from './types/module3';

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { parseUserInput, runModule1Tests, completeUserInput, runModule2Tests } from './core/pipeline';
+import { parseUserInput, runModule1Tests, completeUserInput, runModule2Tests, optimizeExpression } from './core/pipeline';
 
 export default function App() {
   const [input, setInput] = useState('生成一张美女图片');
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [testMode, setTestMode] = useState<'m1' | 'm1+m2'>('m1');
+  const [testMode, setTestMode] = useState<'m1' | 'm1+m2' | 'm1+m2+m3'>('m1');
   const [showRawData, setShowRawData] = useState(true);
 
   const handleTestM1 = async () => {
@@ -45,6 +45,39 @@ export default function App() {
         module: 'M1+M2', 
         m1: m1Result, 
         m2: m2Result 
+      });
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTestM1M2M3 = async () => {
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      // 先运行模块1
+      const m1Result = await parseUserInput(input);
+      
+      // 再运行模块2
+      const m2Result = await completeUserInput(m1Result, {
+        preferredStyle: '写实风格',
+        commonSubjects: ['美女', '女孩'],
+        preferredScenes: ['室内', '窗台'],
+        preferredResolution: '4K'
+      });
+      
+      // 最后运行模块3
+      const m3Result = await optimizeExpression(m2Result);
+      
+      setResult({ 
+        module: 'M1+M2+M3', 
+        m1: m1Result, 
+        m2: m2Result,
+        m3: m3Result
       });
     } catch (err: any) {
       setError(err.message);
@@ -101,7 +134,7 @@ export default function App() {
             />
             仅模块1
           </label>
-          <label>
+          <label style={{ marginRight: 16 }}>
             <input 
               type="radio" 
               value="m1+m2" 
@@ -111,10 +144,20 @@ export default function App() {
             />
             模块1+模块2
           </label>
+          <label>
+            <input 
+              type="radio" 
+              value="m1+m2+m3" 
+              checked={testMode === 'm1+m2+m3'} 
+              onChange={e => setTestMode(e.target.value as 'm1+m2+m3')}
+              style={{ marginRight: 4 }}
+            />
+            模块1+模块2+模块3
+          </label>
         </div>
         
         <button 
-          onClick={testMode === 'm1' ? handleTestM1 : handleTestM1M2} 
+          onClick={testMode === 'm1' ? handleTestM1 : testMode === 'm1+m2' ? handleTestM1M2 : handleTestM1M2M3} 
           disabled={loading}
           style={{ 
             padding: '8px 16px', 
@@ -126,7 +169,7 @@ export default function App() {
             cursor: loading ? 'not-allowed' : 'pointer'
           }}
         >
-          {loading ? '测试中...' : `测试${testMode === 'm1' ? '模块1' : '模块1+模块2'}`}
+          {loading ? '测试中...' : `测试${testMode === 'm1' ? '模块1' : testMode === 'm1+m2' ? '模块1+模块2' : '模块1+模块2+模块3'}`}
         </button>
         
         <button 
@@ -311,6 +354,146 @@ export default function App() {
                       boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                     }}>
                       {JSON.stringify(result.m2, null, 2)}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {result.module === 'M1+M2+M3' && (
+            <div>
+              <h4>模块1结果</h4>
+              <div style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #dee2e6',
+                padding: 12,
+                borderRadius: 4,
+                marginBottom: 16
+              }}>
+                <div><strong>核心主体：</strong>{result.m1.coreSubject}</div>
+                <div><strong>核心需求：</strong>{result.m1.coreIntent}</div>
+                <div><strong>置信度：</strong>{result.m1.confidence}</div>
+              </div>
+              
+              <h4>模块2结果</h4>
+              <div style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #dee2e6',
+                padding: 12,
+                borderRadius: 4,
+                marginBottom: 16
+              }}>
+                <div><strong>补全策略：</strong>{result.m2.completionStrategy.strategy}</div>
+                <div><strong>置信度等级：</strong>{result.m2.completionStrategy.confidenceLevel}</div>
+                <div><strong>主体与特征：</strong>{result.m2.subjectAndFeatures.coreSubject}</div>
+                <div><strong>风格与流派：</strong>{result.m2.styleAndGenre.artStyle}</div>
+                <div><strong>场景与环境：</strong>{result.m2.sceneAndEnvironment.coreScene}</div>
+                <div><strong>视角与构图：</strong>{result.m2.perspectiveAndComposition.shootingPerspective}</div>
+                <div><strong>技术与参数：</strong>{result.m2.technicalParameters.resolution}</div>
+                <div><strong>负面提示：</strong>{result.m2.negativePrompts.generalNegative.join(', ')}</div>
+              </div>
+              
+              <h4>模块3结果 - 优化后的提示词</h4>
+              <div style={{
+                backgroundColor: '#e8f5e8',
+                border: '2px solid #28a745',
+                padding: 16,
+                borderRadius: 8,
+                whiteSpace: 'pre-wrap',
+                fontFamily: 'monospace',
+                fontSize: '14px',
+                marginBottom: 16,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}>
+                {result.m3.optimizedPrompt}
+              </div>
+
+              <h4>模块3结构化信息</h4>
+              <div style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #dee2e6',
+                padding: 12,
+                borderRadius: 4,
+                marginBottom: 16
+              }}>
+                <div><strong>核心信息：</strong>{result.m3.structureInfo.coreInfo}</div>
+                <div><strong>场景信息：</strong>{result.m3.structureInfo.sceneInfo}</div>
+                <div><strong>技术信息：</strong>{result.m3.structureInfo.technicalInfo}</div>
+                <div><strong>负面信息：</strong>{result.m3.structureInfo.negativeInfo}</div>
+              </div>
+
+              <h4>优化标记</h4>
+              <div style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #dee2e6',
+                padding: 12,
+                borderRadius: 4,
+                marginBottom: 16
+              }}>
+                <div><strong>重新排序：</strong>{result.m3.optimizationMarks.reordered ? '是' : '否'}</div>
+                <div><strong>信息分组：</strong>{result.m3.optimizationMarks.grouped ? '是' : '否'}</div>
+                <div><strong>权重标注：</strong>{result.m3.optimizationMarks.weighted ? '是' : '否'}</div>
+                <div><strong>简化表达：</strong>{result.m3.optimizationMarks.simplified ? '是' : '否'}</div>
+              </div>
+              
+              {showRawData && (
+                <div>
+                  <h5 style={{ color: '#007bff', borderBottom: '2px solid #007bff', paddingBottom: '8px' }}>
+                    📊 完整JSON数据结构
+                  </h5>
+                  
+                  <div style={{ marginBottom: 20 }}>
+                    <h6 style={{ color: '#28a745', marginBottom: '8px' }}>🔍 模块1 JSON数据</h6>
+                    <div style={{
+                      backgroundColor: '#f8f9fa',
+                      border: '2px solid #28a745',
+                      padding: 16,
+                      borderRadius: 8,
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: 'Consolas, Monaco, monospace',
+                      fontSize: '13px',
+                      maxHeight: '300px',
+                      overflow: 'auto',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}>
+                      {JSON.stringify(result.m1, null, 2)}
+                    </div>
+                  </div>
+                  
+                  <div style={{ marginBottom: 20 }}>
+                    <h6 style={{ color: '#dc3545', marginBottom: '8px' }}>🔍 模块2 JSON数据</h6>
+                    <div style={{
+                      backgroundColor: '#f8f9fa',
+                      border: '2px solid #dc3545',
+                      padding: 16,
+                      borderRadius: 8,
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: 'Consolas, Monaco, monospace',
+                      fontSize: '13px',
+                      maxHeight: '400px',
+                      overflow: 'auto',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}>
+                      {JSON.stringify(result.m2, null, 2)}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h6 style={{ color: '#6f42c1', marginBottom: '8px' }}>🔍 模块3 JSON数据</h6>
+                    <div style={{
+                      backgroundColor: '#f8f9fa',
+                      border: '2px solid #6f42c1',
+                      padding: 16,
+                      borderRadius: 8,
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: 'Consolas, Monaco, monospace',
+                      fontSize: '13px',
+                      maxHeight: '500px',
+                      overflow: 'auto',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}>
+                      {JSON.stringify(result.m3, null, 2)}
                     </div>
                   </div>
                 </div>
