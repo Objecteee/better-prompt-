@@ -15,3 +15,9 @@ export { testCases as m2TestCases, runModule2Tests, runPerformanceTest as runM2P
 // 模块3
 export { Module3Optimizer, optimizeExpression } from './modules/module3';
 export type { M3Input, M3Output, M3Config } from './types/module3';
+
+// 模块4
+export { Module4Adapter, adaptToModel } from './modules/module4';
+export type { M4Input, M4Output, M4Config, SupportedModel } from './types/module4';
+export { Module4Validator } from './validators/module4';
+export { module4TestCases, runModule4Test, runAllModule4Tests, testModelAdaptation } from './examples/module4';
